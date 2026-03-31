@@ -1,0 +1,309 @@
+Factory Pattern
+from abc import ABC, abstractmethod
+
+class PaymentProcessor(ABC):
+    @abstractmethod
+    def validate(self, details: dict) -> bool:
+        pass
+
+    @abstractmethod
+    def calculate_fee(self, amount: float) -> float:
+        pass
+
+    def process(self, amount: float, details: dict) -> dict:
+        error_msg = self.validate(details)
+        if error_msg:
+            return {"success": False, "error": error_msg}
+
+        cost = self.calculate_fee(amount)
+        return {
+            "success": True, 
+            "method": self.__class__.__name__, 
+            "amount": amount + cost, 
+            "fee": cost
+        }
+
+class CreditCardProcessor(PaymentProcessor):
+    def validate(self, details: dict):
+        c_num = details.get("card_number", "")
+        c_vv = details.get("cvv", "")
+
+        if not c_num or len(str(c_num)) != 16:
+            return "Invalid card number"
+        if not c_vv or len(str(c_vv)) != 3:
+            return "Invalid CVV"
+        return None
+
+    def calculate_fee(self, amount: float):
+        return amount * 0.029
+
+class BankTransferProcessor(PaymentProcessor):
+    def validate(self, details: dict):
+        iban_val = details.get("iban", "")
+        if not iban_val or len(iban_val) < 15:
+            return "Invalid IBAN"
+        return None
+
+    def calculate_fee(self, amount: float):
+        return 1.50
+
+class PayPalProcessor(PaymentProcessor):
+    def validate(self, details: dict):
+        user_email = details.get("email", "")
+        if not user_email or "@" not in user_email:
+            return "Invalid PayPal email"
+        return None
+
+    def calculate_fee(self, amount: float):
+        return (amount * 0.034) + 0.30
+
+class PaymentFactory:
+    _mapping = {
+        "credit_card": CreditCardProcessor,
+        "bank_transfer": BankTransferProcessor,
+        "paypal": PayPalProcessor
+    }
+
+    @classmethod
+    def get_processor(cls, p_type: str):
+        target = cls._mapping.get(p_type)
+        if not target:
+            raise ValueError(f"Unknown type: {p_type}")
+        return target()
+factory = PaymentFactory()
+
+# Test PayPal - Valid
+pp = factory.get_processor("paypal")
+print(pp.process(145.55, {"email": "office.manager@company.org"}))
+
+# Test Bank Transfer - Valid
+bt = factory.get_processor("bank_transfer")
+print(bt.process(2500.0, {"iban": "DE8937040044053201300099"}))
+
+# Test Credit Card - Valid
+cc = factory.get_processor("credit_card")
+print(cc.process(88.25, {"card_number": "4444555566667777", "cvv": "555"}))
+
+# Test PayPal - Invalid email
+print(pp.process(10.0, {"email": "invalid_user_format"}))
+
+# Test Credit Card - Invalid CVV (4 digits)
+print(cc.process(20.0, {"card_number": "4444555566667777", "cvv": "1234"}))
+{'success': True, 'method': 'PayPalProcessor', 'amount': 150.79870000000003, 'fee': 5.2487}
+{'success': True, 'method': 'BankTransferProcessor', 'amount': 2501.5, 'fee': 1.5}
+{'success': True, 'method': 'CreditCardProcessor', 'amount': 90.80925, 'fee': 2.55925}
+{'success': False, 'error': 'Invalid PayPal email'}
+{'success': False, 'error': 'Invalid CVV'}
+Builder Pattern
+from dataclasses import dataclass
+from typing import Optional, Dict, Any
+
+@dataclass
+class Employee:
+    first_name: str
+    last_name: str
+    email: str
+    department: str
+    position: str
+    salary: float
+    start_date: str
+    manager_id: Optional[int] = None
+    phone: Optional[str] = None
+    address: Optional[str] = None
+    emergency_contact: Optional[str] = None
+    has_parking: bool = False
+    has_laptop: bool = False
+    has_vpn_access: bool = False
+    has_admin_rights: bool = False  # Set to False by default
+    office_location: Optional[str] = None
+    contract_type: str = "permanent"
+
+class EmployeeBuilder:
+    def __init__(self) -> None:
+        self._data: Dict[str, Any] = {
+            "has_parking": False, 
+            "has_laptop": False, 
+            "has_vpn_access": False, 
+            "has_admin_rights": False,
+            "contract_type": "permanent"
+        }
+
+    def with_identity(self, first: str, last: str, email: str) -> "EmployeeBuilder":
+        self._data["first_name"] = first
+        self._data["last_name"] = last
+        self._data["email"] = email
+        return self
+
+    def with_job_details(self, dept: str, pos: str, pay: float, start: str) -> "EmployeeBuilder":
+        self._data["department"] = dept
+        self._data["position"] = pos
+        self._data["salary"] = pay
+        self._data["start_date"] = start
+        return self
+
+    def with_security(self, vpn: bool, admin: bool) -> "EmployeeBuilder":
+        self._data["has_vpn_access"] = vpn
+        self._data["has_admin_rights"] = admin
+        return self
+
+    def with_equipment(self, laptop: bool, office: str, parking: bool = False) -> "EmployeeBuilder":
+        self._data["has_laptop"] = laptop
+        self._data["office_location"] = office
+        self._data["has_parking"] = parking
+        return self
+
+    def build(self) -> Employee:
+        # Mandatory Validation
+        if not self._data.get("first_name") or "@" not in self._data.get("email", ""):
+            raise ValueError("First name and a valid email are required.")
+        if self._data.get("salary", 0) < 0:
+            raise ValueError("Salary cannot be negative.")
+            
+        return Employee(**self._data)
+
+class DeveloperBuilder(EmployeeBuilder):
+    def __init__(self, first: str, last: str, email: str):
+        super().__init__()
+        (self.identify_as(first, last)
+             .contact_via(email)
+             .setup_access(laptop=True, vpn=True, admin=True)
+             .define_contract("Permanent"))
+
+class InternBuilder(EmployeeBuilder):
+    def __init__(self, first: str, last: str, email: str):
+        super().__init__()
+        (self.identify_as(first, last)
+             .contact_via(email)
+             .setup_access(laptop=True, vpn=False, admin=False)
+             .define_contract("Internship"))
+if __name__ == "__main__":
+    # Developer with full access
+    dev = create_employee(
+        "John",
+        "Doe",
+        "john.doe@company.com",
+        "Engineering",
+        "Senior Developer",
+        75000,
+        "2024-01-15",
+        None,
+        "+33612345678",
+        None,
+        None,
+        False,
+        True,
+        True,
+        True,
+        "Paris HQ",
+        "permanent"
+    )
+
+
+    # Intern with minimal access
+    intern = create_employee(
+        "Jane",
+        "Smith",
+        "jane.smith@company.com",
+        "Marketing",
+        "Intern",
+        15000,
+        "2024-02-01",
+        42,
+        None,
+        None,
+        None,
+        False,
+        True,
+        False,
+        False,
+        "Paris HQ",
+        "internship"
+    )
+
+    print(dev)
+    print("    ")
+    print(intern)
+{'first_name': 'John', 'last_name': 'Doe', 'email': 'john.doe@company.com', 'department': 'Engineering', 'position': 'Senior Developer', 'salary': 75000, 'start_date': '2024-01-15', 'manager_id': None, 'phone': '+33612345678', 'address': None, 'emergency_contact': None, 'has_parking': False, 'has_laptop': True, 'has_vpn_access': True, 'has_admin_rights': True, 'office_location': 'Paris HQ', 'contract_type': 'permanent'}
+    
+{'first_name': 'Jane', 'last_name': 'Smith', 'email': 'jane.smith@company.com', 'department': 'Marketing', 'position': 'Intern', 'salary': 15000, 'start_date': '2024-02-01', 'manager_id': 42, 'phone': None, 'address': None, 'emergency_contact': None, 'has_parking': False, 'has_laptop': True, 'has_vpn_access': False, 'has_admin_rights': False, 'office_location': 'Paris HQ', 'contract_type': 'internship'}
+Singleton Pattern
+import json
+from typing import Optional, Any, Dict
+
+class ConfigProvider(ABC):
+    @abstractmethod
+    def load_data(self) -> dict:
+        pass
+
+class FileProvider(ConfigProvider):
+    def __init__(self, path: str):
+        self.path = path
+
+    def load_data(self) -> dict:
+        # Simulated logic for the file load
+        return {
+            "app": {"name": "ProApp", "version": "2.0"},
+            "db": {"host": "127.0.0.1", "port": 3306}
+        }
+
+class DictionaryProvider(ConfigProvider):
+    def __init__(self, data: dict):
+        self.data = data
+
+    def load_data(self) -> dict:
+        return self.data
+
+class ConfigManager:
+    _instance = None
+
+    def __init__(self, provider: ConfigProvider):
+        self._settings = provider.load_data()
+
+    @classmethod
+    def get_instance(cls, provider: Optional[ConfigProvider] = None):
+        if cls._instance is None:
+            if provider is None:
+                provider = FileProvider("config.json")
+            cls._instance = cls(provider)
+        return cls._instance
+
+    def fetch(self, path: str, default: Any = None):
+        keys = path.split(".")
+        current = self._settings
+        
+        for k in keys:
+            if isinstance(current, dict) and k in current:
+                current = current[k]
+            else:
+                return default
+        return current
+# Reset singleton for clean test
+ConfigManager._instance = None
+
+
+test_data = {
+    "app": {"name": "Production_System", "debug": False},
+    "network": {"timeout": 30}
+}
+provider = DictionaryProvider(test_data)
+
+
+cfg = ConfigManager.get_instance(provider)
+
+# Test dot-notation fetching
+print(f"Application Name: {cfg.fetch('app.name')}")
+print(f"Debug Mode: {cfg.fetch('app.debug')}")
+print(f"Network Timeout: {cfg.fetch('network.timeout')}")
+print(f"Missing Value: {cfg.fetch('database.url', 'Not Set')}")
+
+
+cfg_again = ConfigManager.get_instance()
+print(f"\nAre instances identical? {cfg is cfg_again}")
+print(f"Memory ID: {id(cfg)}")
+Application Name: Production_System
+Debug Mode: False
+Network Timeout: 30
+Missing Value: Not Set
+
+Are instances identical? True
+Memory ID: 4387575600
