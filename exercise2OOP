@@ -1,0 +1,222 @@
+Operator Overloading
+      Problem 1
+class Complex:
+    def __init__(self, real, imaginary):
+        self.real = real
+        self.imaginary = imaginary
+
+    def __add__(self, other):
+        return Complex(self.real + other.real, self.imaginary + other.imaginary)
+
+    def __sub__(self, other):
+        return Complex(self.real - other.real, self.imaginary - other.imaginary)     
+
+    def __repr__(self):
+        return f"{self.real} + {self.imaginary}i"
+c1 = Complex(4,2)
+c2 = Complex(6,3)
+print(c1 + c2)
+print(c1 - c2)
+10 + 5i
+-2 + -1i
+
+
+      Problem 2
+class Person:
+    def __init__(self, name, age, gender):
+        self.name = name
+        self.age = age
+        self.gender = age
+
+    def __gt__(self, other):
+        if self.age > other.age:
+            return True
+        else:
+            return False
+person1 = Person("Gabriel", 19, "Male")
+person2 = Person("Raphaël", 14, "Male")
+print(person1 > person2)
+True
+print(person1 < person2)
+False
+      
+      Problem 4
+class Vector:
+    def __init__(self, x, y, z):
+        self.x = x
+        self.y = y
+        self.z = z
+
+    def __mul__(self, other):
+        return Vector(self.x * other.x, self.y * other.y, self.z * other.z)
+
+    def __repr__(self):
+        return(f"{self.x}, {self.y}, {self.z}")
+v1 = Vector(3, 4, 5)
+v2 = Vector(-2, 5, 2)
+v1 * v2
+-6, 20, 10
+      Problem 5
+class Circle:
+    def __init__(self, radius):
+        self.radius = radius
+
+    def __lt__(self, other):
+        return self.radius < other.radius
+
+    def __gt__(self, other):
+        return self.radius > other.radius
+
+    def __le__(self, other):
+        return self.radius <= other.radius
+
+    def __ge__(self, other):
+        return self.radius >= other.radius
+
+    def __eq__(self, other):
+        return self.radius == other.radius
+
+    def __ne__(self, other):
+        return self.radius != other.radius
+circle1 = Circle(6)
+circle2 = Circle(4)
+circle1 < circle2
+False
+circle1 != circle2
+True
+Problem 6
+import math
+
+class Euclidean:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+    def distance(self):
+        return math.sqrt(self.x**2 + self.y**2)
+    
+    def __lt__(self, other):
+        return self.distance() < other.distance()
+
+    def __gt__(self, other):
+        return self.distance() > other.distance()
+
+    def __le__(self, other):
+        return self.distance() <= other.distance()
+
+    def __ge__(self, other):
+        return self.distance() >= other.distance()
+
+    def __eq__(self, other):
+        return self.distance() == other.distance()
+
+    def __ne__(self, other):
+        return self.distance() != other.distance()
+
+    def __repr__(self):
+        return f"Point({self.x}, {self.y})"
+p1 = Euclidean(2, 7)
+p2 = Euclidean(3, 2)
+print(p1 > p2)
+print(p1 < p2)
+print(p1 == p2)
+True
+False
+False
+Problem 7
+class Matrix:
+    def __init__(self, matrix):
+        self.matrix = matrix
+        
+    def __mul__(self, other):
+        result = []
+        for i in range(len(self.matrix)):
+            row = []
+            for j in range(len(other.matrix[0])):
+                sum = 0
+                for k in range(len(other.matrix)):
+                    sum += self.matrix[i][k] * other.matrix[k][j]
+                row.append(sum)
+            result.append(row)
+        return Matrix(result)
+        
+    def __str__(self):
+        return str(self.matrix)
+m1 = Matrix([[1, 2], [3, 4]])
+m2 = Matrix([[5, 6], [7, 8]])
+m3 = m1 * m2
+print(m3)
+[[19, 22], [43, 50]]
+Inheritance
+Problem 1
+class Vehicle:
+    def drive(self):
+        return("Driving a Vehicle")
+
+class Car(Vehicle):
+    def drive(self):
+        return("Driving a Car")
+
+class Bicycle(Vehicle):
+    def drive(self):
+        return("Driving a Bicycle")
+Problem 2
+class Person:
+    def __init__(self, name, age, address):
+        self.name = name
+        self.age = age
+        self.address = address
+
+    def introduce(self):
+        return("My name is {}, I'm {} years old and live at {}.").format(self.name, self.age, self.address)
+
+class Student(Person):
+    def __init__(self, name, age, address, field_of_study):
+        Person.__init__(self, name, age, address)
+        self.field_of_study = field_of_study
+
+    def introduce(self):
+        return("My name is {}, I'm {} years old and live at {}. I'm currently studying {}.").format(self.name, self.age, self.address, self.field_of_study)
+
+class Employee(Person):
+    def __init__(self, name, age, address, company):
+        Person.__init__(self, name, age, address)
+        self.company = company
+
+    def introduce(self):
+        return("My name is {}, I'm {} years old and live at {}. I currently work at {}.").format(self.name, self.age, self.address, self.company)
+        
+        Problem 3
+class BankAccount:
+    def __init__(self, account_number, balance):
+        self.account_number = account_number
+        self.balance = balance
+
+    def deposit(self, amount):
+        self.balance += amount
+
+    def withdraw(self, amount):
+        if self.balance >= amount:
+            self.balance -= amount
+        else:
+            return("Insufficient funds")
+
+    def transfer(self, amount, destination):
+        if self.balance >= amount:
+            self.balance -= amount
+            destination_account.deposit(amount)
+            return True
+        else:
+            return False
+
+class SavingsAccount(BankAccount):
+    def __init__(self, account_number, balance, interest_rate):
+        BankAccount.__init__(self, account_number, balance)
+        self.interest_rate = interest_rate
+        
+    def add_interest(self):
+        interest = self.balance * self.interest_rate
+        self.deposit(interest)
+        
+    def check_balance(self):
+        return self.balance
