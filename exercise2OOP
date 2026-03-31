@@ -33,8 +33,8 @@ class Person:
             return True
         else:
             return False
-person1 = Person("Gabriel", 19, "Male")
-person2 = Person("Raphaël", 14, "Male")
+person1 = Person("Apolline", 19, "Female")
+person2 = Person("Tiphaine", 18, "Female")
 print(person1 > person2)
 True
 print(person1 < person2)
